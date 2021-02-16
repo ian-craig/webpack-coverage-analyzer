@@ -25,6 +25,12 @@ module.exports = {
   optimization: {
     minimize: false,
     concatenateModules: false,
+    namedModules: true,
+    namedChunks: true,
+    // splitChunks: {
+    //   hidePathInfo: false,
+    //   minSize: 1,
+    // },
   },
   plugins: [
     new StatsWriterPlugin({
