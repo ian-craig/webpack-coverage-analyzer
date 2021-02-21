@@ -1,4 +1,5 @@
 
+import { Module } from 'module';
 import type { Stats as WebpackStats } from 'webpack';
 import { ModuleCoverageAnalysisResult } from './analyzeCoverage';
 
@@ -11,12 +12,20 @@ export const analyzeWebpackSats = (stats: WebpackStats.ToJsonOutput, coverageRes
         console.log(`\nAnalyzing Chunk ${chunk.id}`);
         for (const module of chunk.modules) {
             console.log(`Module ${module.name}`);
+
+            const reasonsByModule = new Map<ModuleId, Set<string>>();
             for (const reason of module.reasons) {
-                if (reason.moduleId === null) continue;
-                
-                const moduleCoverage = coverageResults.get(reason.moduleId);
+                if (reason.moduleId !== null) {
+                    const reasonTypes = reasonsByModule.get(reason.moduleId) || new Set<string>();
+                    reasonTypes.add(reason.type);
+                    reasonsByModule.set(reason.moduleId, reasonTypes);
+                }
+            }
+
+            for (const [moduleId, reasonTypes] of reasonsByModule) {
+                const moduleCoverage = coverageResults.get(moduleId);
                 if (moduleCoverage === undefined) {
-                    throw new Error(`Found no coverage analysis for module ${reason.module} which is a reason for module ${module.name}`);
+                    throw new Error(`Found no coverage analysis for module ${moduleId} which is a reason for module ${module.name}`);
                 }
 
                 const { usedCount, unusedCount } = moduleCoverage.usages.reduce((counts, usage) => {
@@ -29,7 +38,7 @@ export const analyzeWebpackSats = (stats: WebpackStats.ToJsonOutput, coverageRes
                     }
                     return counts;
                 }, { usedCount: 0, unusedCount: 0 })
-                console.log(`  reason ${reason.module}: ${usedCount} used, ${unusedCount} unused`);
+                console.log(`  reason ${moduleId} '${[...reasonTypes].join("','")}': ${usedCount} used, ${unusedCount} unused`);
             }
         }
     }
