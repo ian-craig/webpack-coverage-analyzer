@@ -6,12 +6,14 @@
   "scripts": {
     "build": "webpack",
     "start": "concurrently \"webpack --watch\" \"node ./express.js\"",
-    "analyze": "ts-node --project analyzer/tsconfig.json --transpile-only analyzer/program.ts coverage.json"
+    "analyze": "ts-node --project analyzer/tsconfig.json --transpile-only analyzer/program.ts coverage.json dist/stats.json"
   },
   "author": "ian-craig",
   "license": "ISC",
   "devDependencies": {
+    "@types/babel__traverse": "^7.11.0",
     "@types/node": "^14.14.28",
+    "@types/webpack": "^4.41.26",
     "concurrently": "^5.3.0",
     "express": "^4.17.1",
     "open": "^7.4.1",
@@ -24,6 +26,7 @@
   },
   "dependencies": {
     "@babel/parser": "^7.12.16",
+    "@babel/traverse": "^7.12.17",
     "@babel/types": "^7.12.13"
   }
 }

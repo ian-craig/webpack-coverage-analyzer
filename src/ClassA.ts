@@ -1,3 +1,4 @@
+import { Class2D } from "./chunk2/Class2D";
 import { ClassB } from "./ClassB";
 
 export class ClassA {
@@ -6,9 +7,10 @@ export class ClassA {
     }
 
     public unusedMethod(): string {
-        import("./chunk2/Class2D").then(({ Class2D }) => {
-            Class2D.someMethod();
-        });
+        // import("./chunk2/Class2D").then(({ Class2D }) => {
+        //     Class2D.someMethod();
+        // });
+        Class2D.someMethod();
         return "unusedMethod text";
     }
 }

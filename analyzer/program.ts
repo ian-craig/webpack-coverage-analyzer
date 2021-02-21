@@ -1,77 +1,38 @@
 import * as fs from "fs";
-import { parse } from "@babel/parser";
-import * as t from "@babel/types";
+import * as path from 'path';
+import type { Stats as WebpackStats } from 'webpack';
+import { analyzeAsset, ModuleCoverageAnalysisResult } from "./analyzeCoverage";
+import { analyzeWebpackSats, getWebpackBundleNames } from "./analyzeWebpackStats";
 
-const analyzeAsset = (asset: CoverageAsset): void => {
-  const ast = parse(asset.text) as t.File;
+/**
+ * Goal:
+ *    Find unused code which can be removed from a chunk.
+ * 
+ * Steps:
+ *    1. Scope analysis to CHUNK level. Coverage data is per file/asset/bundle, so we need to first break this into MODULEs then group by CHUNK.
+ *    2. Make a list of MODULEs which are completely unused.
+ *    3. Generate a graph which represents where each MODULE is used.
+ *    4. Find MODULEs where none of the usages are used according to coverage data.
+ */
 
-  console.log(`\nParsing ${asset.url}`);
+const main = (coverageReportPath: string, webpackStatsFilePath: string) => {
+  let coverage = JSON.parse(fs.readFileSync(coverageReportPath, "utf8")) as CoverageReport;
+  const webpackStats = JSON.parse(fs.readFileSync(webpackStatsFilePath, "utf8")) as WebpackStats.ToJsonOutput;
 
-  let modules = getWebpackChunkModules(ast);
-  if (modules === undefined) return;
+  // Exclude any assets not from this Webpack build
+  const bundleNames = getWebpackBundleNames(webpackStats);
+  coverage = coverage.filter(assetCoverage => {
+    const fileName = path.basename(assetCoverage.url);
+    return bundleNames.has(fileName);
+  });
 
-  let rangeIndex = 0;
-  for (const prop of modules) {
-    const id = t.isStringLiteral(prop.key) ? prop.key.value : (prop.key as t.NumericLiteral).value.toString();
-    const body = (prop.value as t.FunctionExpression).body.body;
+  // Analyze coverage data to find usages of other modules from each module, and whether those usages are covered or not.
+  const moduleCoverageResults = new Map<ModuleId, ModuleCoverageAnalysisResult>();
+  coverage.map(assetCoverage => {
+    analyzeAsset(assetCoverage).forEach(result => moduleCoverageResults.set(result.id, result));
+  });
 
-    const startChar = body[0].start;
-    const endChar = body[body.length-1].end;
-
-    while (rangeIndex < asset.ranges.length && asset.ranges[rangeIndex].end <= startChar) { rangeIndex++; }
-
-    let coveredLineCount = 0;
-
-    for (; rangeIndex < asset.ranges.length && asset.ranges[rangeIndex].end < endChar; rangeIndex++) {
-      coveredLineCount += asset.ranges[rangeIndex].end - Math.max(startChar, asset.ranges[rangeIndex].start);
-    }
-    if (rangeIndex < asset.ranges.length && asset.ranges[rangeIndex].start < endChar) {
-      coveredLineCount += Math.min(endChar, asset.ranges[rangeIndex].end) - Math.max(startChar, asset.ranges[rangeIndex].start);
-    }
-
-    const coverage = coveredLineCount / (endChar - startChar);
-
-    console.log(`Module ${id}: lines ${body[0].loc.start.line}-${body[body.length-1].loc.end.line}. Coverage ${coverage*100.0}%`);
-  }
+  analyzeWebpackSats(webpackStats, moduleCoverageResults);
 };
 
-const getWebpackChunkModules = (ast: t.File): t.ObjectProperty[] | undefined => {
-  if (
-    ast.program.body.length === 1 &&
-    t.isExpressionStatement(ast.program.body[0]) &&
-    t.isCallExpression(ast.program.body[0].expression) &&
-    t.isFunctionExpression(ast.program.body[0].expression.callee, { id: null }) &&
-    t.isIdentifier(ast.program.body[0].expression.callee.params[0], { name: "modules" }) &&
-    t.isFunctionDeclaration(ast.program.body[0].expression.callee.body.body[0]) &&
-    t.isIdentifier(ast.program.body[0].expression.callee.body.body[0].id, { name: "webpackJsonpCallback"}) &&
-    t.isObjectExpression(ast.program.body[0].expression.arguments[0])
-  ) {
-    return ast.program.body[0].expression.arguments[0].properties as t.ObjectProperty[];
-  }
-
-  if (
-    ast.program.body.length === 1 &&
-    t.isExpressionStatement(ast.program.body[0]) &&
-    t.isCallExpression(ast.program.body[0].expression) &&
-    t.isMemberExpression(ast.program.body[0].expression.callee) &&
-    t.isIdentifier(ast.program.body[0].expression.callee.property, { name: "push" }) &&
-    t.isAssignmentExpression(ast.program.body[0].expression.callee.object) &&
-    t.isMemberExpression(ast.program.body[0].expression.callee.object.left) &&
-    t.isStringLiteral(ast.program.body[0].expression.callee.object.left.property, { value: "webpackJsonp" }) &&
-    t.isArrayExpression(ast.program.body[0].expression.arguments[0]) &&
-    t.isObjectExpression(ast.program.body[0].expression.arguments[0].elements[1])
-  ) {
-    return ast.program.body[0].expression.arguments[0].elements[1].properties as t.ObjectProperty[];
-  }
-
-  return undefined;
-};
-
-const main = (coverageReportPath: string) => {
-  const content = fs.readFileSync(coverageReportPath, "utf8");
-  const coverage = JSON.parse(content) as CoverageReport;
-
-  coverage.map(analyzeAsset);
-};
-
-main(process.argv[2]);
+main(process.argv[2], process.argv[3]);
