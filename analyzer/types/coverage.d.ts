@@ -3,10 +3,10 @@ declare interface Range {
     end: number;
 }
 
-declare interface CoverageAsset {
+declare interface AssetCoverage {
     url: string;
     ranges: Range[];
     text: string;
 }
 
-declare type CoverageReport = CoverageAsset[];
+declare type CoverageReport = AssetCoverage[];

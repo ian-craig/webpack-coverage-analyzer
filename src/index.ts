@@ -1,3 +1,5 @@
+import { Class2D } from "./chunk2/Class2D";
+import * as E from "./chunk2/Class2E";
 import { ClassA } from "./ClassA";
 
 function main() {

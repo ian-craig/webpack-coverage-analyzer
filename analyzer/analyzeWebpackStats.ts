@@ -1,5 +1,4 @@
 
-import { Module } from 'module';
 import type { Stats as WebpackStats } from 'webpack';
 import { ModuleCoverageAnalysisResult } from './analyzeCoverage';
 
