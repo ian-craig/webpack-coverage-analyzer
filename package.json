@@ -1,15 +1,16 @@
 {
-  "name": "webpack-typescript-example",
+  "name": "webpack-coverage-analyzer",
   "version": "1.0.0",
-  "description": "",
+  "description": "Intersects Webpack Stats analysis with JavaScript Coverage reports to determine which modules are unused at runtime.",
   "private": true,
   "scripts": {
     "build": "webpack",
-    "start": "concurrently \"webpack --watch\" \"node ./express.js\"",
-    "analyze": "ts-node --project analyzer/tsconfig.json --transpile-only analyzer/program.ts coverage.json dist/stats.json"
+    "sample:start": "concurrently \" --config sample/webpack.config.js --watch\" \"node sample/express.js\"",
+    "analyze": "ts-node --transpile-only src/program.ts sample/coverage.json sample/dist/stats.json",
+    "analyze:sample": "npm run analyze -- sample/coverage.json sample/dist/stats.json"
   },
   "author": "ian-craig",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@babel/preset-typescript": "^7.12.17",
     "@types/babel__traverse": "^7.11.0",
@@ -19,7 +20,6 @@
     "concurrently": "^5.3.0",
     "express": "^4.17.1",
     "jest": "^26.6.3",
-    "open": "^7.4.1",
     "ts-loader": "^8.0.17",
     "ts-node": "^9.1.1",
     "typescript": "^4.1.5",

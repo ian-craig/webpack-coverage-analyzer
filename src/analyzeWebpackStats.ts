@@ -27,7 +27,7 @@ export const analyzeWebpackSats = (stats: WebpackStats.ToJsonOutput, coverageRes
                     throw new Error(`Found no coverage analysis for module ${moduleId} which is a reason for module ${module.name}`);
                 }
 
-                const { usedCount, unusedCount } = moduleCoverage.usages.reduce((counts, usage) => {
+                const { usedCount, unusedCount } = moduleCoverage.refs.reduce((counts, usage) => {
                     if (usage.moduleId === module.id) {
                         if (usage.isCovered) {
                             counts.usedCount += 1;
