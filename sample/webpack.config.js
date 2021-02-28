@@ -1,5 +1,5 @@
 const path = require("path");
-const { StatsWriterPlugin } = require("webpack-stats-plugin")
+const { StatsWriterPlugin } = require("webpack-stats-plugin");
 
 module.exports = {
   mode: "production",
@@ -20,13 +20,14 @@ module.exports = {
   output: {
     filename: "bundle.js",
     path: path.resolve(__dirname, "dist"),
-    chunkFilename: '[name].js',
+    chunkFilename: "[name].js",
   },
   optimization: {
     minimize: false,
     concatenateModules: false,
-    namedModules: true,
+    namedModules: false,
     namedChunks: true,
+    sideEffects: true,
     // splitChunks: {
     //   hidePathInfo: false,
     //   minSize: 1,
@@ -36,8 +37,8 @@ module.exports = {
     new StatsWriterPlugin({
       filename: "stats.json",
       stats: {
-        all: true
-      }
-    })
-  ]
+        all: true,
+      },
+    }),
+  ],
 };

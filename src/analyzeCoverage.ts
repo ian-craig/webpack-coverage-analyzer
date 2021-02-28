@@ -9,9 +9,7 @@ interface Range {
   end: number;
 }
 
-interface ModuleRefWithCoverage {
-  moduleId: ModuleId;
-  pos: number;
+interface ModuleRefWithCoverage extends ModuleRef {
   isCovered: boolean;
 }
 
@@ -25,20 +23,26 @@ export interface ModuleCoverageAnalysisResult {
 const checkModuleRefCoverage = (moduleRefs: ModuleRef[], coveredRanges: Range[]): ModuleRefWithCoverage[] => {
   let result: ModuleRefWithCoverage[] = [];
 
+  moduleRefs = moduleRefs.sort((a, b) => a.pos - b.pos);
+
   let rangeIndex = 0;
-  for (const { moduleId, pos } of moduleRefs) {
+  for (const { moduleId, pos, line } of moduleRefs) {
     while (rangeIndex < coveredRanges.length && coveredRanges[rangeIndex].end <= pos) rangeIndex++;
     result.push({
       moduleId,
       pos,
-      isCovered: rangeIndex < coveredRanges.length && coveredRanges[rangeIndex].start <= pos
+      line,
+      isCovered: rangeIndex < coveredRanges.length && coveredRanges[rangeIndex].start <= pos,
     });
   }
 
   return result;
 };
 
-const analuyzeModules = (asset: AssetCoverage, modulePaths: NodePath<t.ObjectProperty>[]): ModuleCoverageAnalysisResult[] => {
+const analuyzeModules = (
+  asset: AssetCoverage,
+  modulePaths: NodePath<t.ObjectProperty>[]
+): ModuleCoverageAnalysisResult[] => {
   let results: ModuleCoverageAnalysisResult[] = [];
 
   let rangeIndex = 0;
@@ -70,7 +74,7 @@ const analuyzeModules = (asset: AssetCoverage, modulePaths: NodePath<t.ObjectPro
     }
 
     console.log(`==== Finding refs for module ${id} ====`);
-    const moduleRefs = findModuleRefs(modulePath.get('value') as NodePath<t.FunctionExpression>);
+    const moduleRefs = findModuleRefs(modulePath.get("value") as NodePath<t.FunctionExpression>);
 
     results.push({ id, range, coveredRanges, refs: checkModuleRefCoverage(moduleRefs, coveredRanges) });
   }
@@ -99,7 +103,12 @@ export const analyzeAsset = (asset: AssetCoverage): ModuleCoverageAnalysisResult
           t.isIdentifier(statement.expression.callee.body.body[0].id, { name: "webpackJsonpCallback" }) &&
           t.isObjectExpression(statement.expression.arguments[0])
         ) {
-          results.push(...analuyzeModules(asset, path.get(`body.${i}.expression.arguments.0.properties`) as NodePath<t.ObjectProperty>[]));
+          results.push(
+            ...analuyzeModules(
+              asset,
+              path.get(`body.${i}.expression.arguments.0.properties`) as NodePath<t.ObjectProperty>[]
+            )
+          );
         }
 
         // Chunk without bootstrap
@@ -114,11 +123,16 @@ export const analyzeAsset = (asset: AssetCoverage): ModuleCoverageAnalysisResult
           t.isArrayExpression(statement.expression.arguments[0]) &&
           t.isObjectExpression(statement.expression.arguments[0].elements[1])
         ) {
-          results.push(...analuyzeModules(asset, path.get(`body.${i}.expression.arguments.0.elements.1.properties`) as NodePath<t.ObjectProperty>[]));
+          results.push(
+            ...analuyzeModules(
+              asset,
+              path.get(`body.${i}.expression.arguments.0.elements.1.properties`) as NodePath<t.ObjectProperty>[]
+            )
+          );
         }
       }
       path.skip();
-    }
+    },
   });
 
   return results;

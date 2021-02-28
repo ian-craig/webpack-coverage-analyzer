@@ -7,7 +7,7 @@
     "build": "webpack",
     "sample:start": "concurrently \" --config sample/webpack.config.js --watch\" \"node sample/express.js\"",
     "analyze": "ts-node --transpile-only src/program.ts sample/coverage.json sample/dist/stats.json",
-    "analyze:sample": "npm run analyze -- sample/coverage.json sample/dist/stats.json"
+    "analyze:sample": "ts-node --transpile-only src/program.ts sample/coverage.json sample/dist/stats.json"
   },
   "author": "ian-craig",
   "license": "MIT",
