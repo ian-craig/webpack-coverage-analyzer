@@ -1,4 +1,4 @@
-# Webpack Coverage Analuyzer
+# Webpack Coverage Analyzer
 
 Intersects Webpack Stats analysis with JavaScript Coverage reports to determine which modules are unused at runtime.
 
